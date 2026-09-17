@@ -1,4 +1,3 @@
-// middleware/auth.js
 // Authentication and authorization middlewares.
 // Verifies JWT token and checks role permissions.
 

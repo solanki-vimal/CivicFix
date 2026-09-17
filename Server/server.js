@@ -1,6 +1,3 @@
-// server.js
-// Entry point for the CivicFix MERN backend application.
-
 // Load environment variables early
 require('dotenv').config();
 
@@ -13,10 +10,14 @@ const cors = require('cors');
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
+const passport = require('passport');
 const { MongoStore } = require('connect-mongo');
 const connectDB = require('./config/db');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 const { generalLimiter } = require('./middleware/rateLimiter');
+
+// Load Passport strategies (Local + Google) — must be required after passport itself
+require('./config/passport');
 
 // Database will be connected during startServer() startup phase
 
@@ -64,8 +65,13 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Passport is used only for its Local + Google strategies here — auth state
+// lives in the JWT cookie, not server-side, so passport.session() is skipped.
+app.use(passport.initialize());
+
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
+app.use('/api/auth', require('./routes/authRoutes'));
 
 // Basic health check route — confirms the server is up and DB is connected
 app.get('/health', (req, res) => {

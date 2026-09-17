@@ -1,4 +1,3 @@
-// middleware/rateLimiter.js
 // Two limiters: a strict one for auth endpoints (brute-force protection,
 // per project spec: max 10 attempts / 15 min / IP), and a general one
 // applied to all routes.

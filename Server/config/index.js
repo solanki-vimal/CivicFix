@@ -1,8 +1,7 @@
-// config/index.js
-// Validates required environment variables at startup — fails fast instead
-// of letting the server run with a missing secret/connection string.
-//
-// This list is scoped to what the backend actually uses right now
+/*
+Validates required environment variables at startup — fails fast instead
+of letting the server run with a missing secret/connection string.
+*/
 
 const requiredEnvVars = [
   'PORT',
@@ -10,6 +9,13 @@ const requiredEnvVars = [
   'CLIENT_URL',
   'MONGO_URI',
   'SESSION_SECRET',
+  'JWT_SECRET',
+  'JWT_EXPIRES_IN',
+  'GOOGLE_CLIENT_ID',
+  'GOOGLE_CLIENT_SECRET',
+  'GOOGLE_CALLBACK_URL',
+  'RESEND_API_KEY',
+  'RESEND_FROM_EMAIL',
 ];
 
 const validateEnv = () => {

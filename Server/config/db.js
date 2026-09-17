@@ -1,4 +1,3 @@
-// config/db.js
 // Establishes a Mongoose connection to MongoDB Atlas.
 // Called once at server startup; the app will not start if connection fails.
 
