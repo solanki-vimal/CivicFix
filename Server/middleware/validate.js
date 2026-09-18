@@ -10,9 +10,10 @@ const validate = (schema) => (req, res, next) => {
     req.body = schema.parse(req.body);
     next();
   } catch (error) {
-    if (error instanceof ZodError) {
-      const message = error.errors.map((e) => e.message).join(', ');
-      return next(new AppError(message, 400));
+    if (error instanceof ZodError || error.name === 'ZodError') {
+      const issues = error.issues || error.errors || [];
+      const message = issues.map((e) => e.message).join(', ');
+      return next(new AppError(message || 'Invalid request data', 400));
     }
     next(error);
   }
