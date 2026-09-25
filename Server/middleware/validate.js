@@ -19,4 +19,22 @@ const validate = (schema) => (req, res, next) => {
   }
 };
 
+// Same idea, but for req.query instead of req.body — query string values are
+// always strings, so schemas passed here should use z.coerce for numbers
+// (see listIssuesQuerySchema in validators/issueValidators.js for an example).
+const validateQuery = (schema) => (req, res, next) => {
+  try {
+    req.query = schema.parse(req.query);
+    next();
+  } catch (error) {
+    if (error instanceof ZodError || error.name === 'ZodError') {
+      const issues = error.issues || error.errors || [];
+      const message = issues.map((e) => e.message).join(', ');
+      return next(new AppError(message || 'Invalid query parameters', 400));
+    }
+    next(error);
+  }
+};
+
 module.exports = validate;
+module.exports.validateQuery = validateQuery;

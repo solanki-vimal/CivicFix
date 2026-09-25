@@ -74,6 +74,7 @@ app.use(passport.initialize());
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/departments', require('./routes/departmentRoutes'));
 app.use('/api/categories', require('./routes/categoryRoutes'));
+app.use('/api/issues', require('./routes/issueRoutes'));
 
 // Basic health check route — confirms the server is up and DB is connected
 app.get('/health', (req, res) => {
