@@ -35,5 +35,6 @@ router.patch(
   updateIssueStatus
 );
 router.patch('/:id/upvote', protect, authorize('citizen'), toggleUpvote);
+router.use('/:id/comments', require('./commentRoutes'));
 
 module.exports = router;

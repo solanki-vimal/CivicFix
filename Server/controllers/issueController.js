@@ -1,8 +1,11 @@
 // Deferred to later phases, not built here:
-// - Comments (POST/GET /api/issues/:id/comments) — not part of this phase's scope
 // - GET /api/issues/analytics/summary — needs real aggregation data, same
 //   reasoning as departmentController.js deferring dept analytics
 // - Image handling — Multer/Cloudinary pipeline is Phase 5
+//
+// Comments (POST/GET /api/issues/:id/comments) live in
+// controllers/commentController.js, routes/commentRoutes.js — nested under
+// /:id/comments in routes/issueRoutes.js.
 
 const asyncHandler = require('express-async-handler');
 const Issue = require('../models/Issue');
