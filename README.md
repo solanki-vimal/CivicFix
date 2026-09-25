@@ -4,7 +4,7 @@ A Web-Based Civic Issue Reporting and Resolution Tracking System.
 
 A full-stack MERN web application where citizens report local infrastructure problems (potholes, garbage, broken streetlights, water leakage) with photos and GPS location. Issues are publicly visible, community-upvotable, and tracked through a complete resolution lifecycle by municipal authority accounts.
 
-> **Status:** Backend foundation, authentication, and Department/Category management are complete and tested end-to-end against a live database. Issue reporting, image uploads, real-time updates, and the frontend are still ahead — see [Roadmap](#roadmap).
+> **Status:** Backend foundation, authentication, Department/Category management, and the full Issue backend (including comments) are complete and tested end-to-end against a live database. Image uploads, real-time updates, and the frontend are still ahead — see [Roadmap](#roadmap).
 
 ---
 
@@ -34,7 +34,17 @@ A full-stack MERN web application where citizens report local infrastructure pro
 - Duplicate-name conflicts return `409`, correctly enforced on both create and update
 - Fully tested end-to-end against live Atlas, including authorization checks (a `citizen` correctly receives `403` on admin-only routes) and category re-routing between departments
 
-**Not yet built** (planned — see roadmap below): issue reporting, image uploads, real-time updates, admin dashboards, notifications, frontend.
+**Implemented — Phase 4 (Issue backend + comments):**
+- Issue creation auto-routed to a department via `resolveDepartmentForCategory()` — the department is derived server-side from the chosen category, never trusted from the client body
+- `GET /api/issues` with category/status/department filters, geospatial `$near` search (lng/lat/radius), and pagination — `$near` supplies its own distance-based sort, so the default `createdAt` sort only applies when no geo filter is active
+- `GET /api/issues/mine`, `GET /api/issues/:id`, `PATCH /api/issues/:id/status`, `PATCH /api/issues/:id/upvote`
+- Every real status change writes a `StatusHistory` audit entry; an assignee- or priority-only update does not, keeping the timeline free of no-op entries
+- Status updates are department-scoped: `staff`/`dept_admin` can only act on issues within their own department, `super_admin` can act on any — this scoping isn't explicit in the API doc's endpoint table but matches the role permissions described in section 2 of the project doc
+- Comments (`POST`/`GET /api/issues/:id/comments`), nested under the issue route via `express.Router({ mergeParams: true })`; `isOfficialUpdate` is set server-side from the poster's role, never client-supplied
+- A generic `validateQuery` middleware was added alongside the existing body validator, for Zod-validated query-string parameters (with `z.coerce` for numeric ones)
+- Fully tested end-to-end against live Atlas: creation + auto-routing correctness, geo search, pagination, cross-department `403` on status updates, rejection without a reason correctly blocked, upvote toggle, and comment authoring/listing including the official-update badge
+
+**Not yet built** (planned — see roadmap below): image uploads, real-time updates, admin dashboards, notifications, frontend.
 
 ---
 
@@ -100,12 +110,14 @@ CivicFix/
     ├── controllers/
     │   ├── authController.js
     │   ├── departmentController.js
-    │   └── categoryController.js
+    │   ├── categoryController.js
+    │   ├── issueController.js
+    │   └── commentController.js
     ├── middleware/
     │   ├── auth.js                  # protect + authorize(...roles)
     │   ├── errorHandler.js
     │   ├── rateLimiter.js           # authLimiter + generalLimiter
-    │   └── validate.js              # generic Zod body validator
+    │   └── validate.js              # generic Zod body + query validators
     ├── models/
     │   ├── User.js
     │   ├── Department.js
@@ -117,7 +129,9 @@ CivicFix/
     ├── routes/
     │   ├── authRoutes.js
     │   ├── departmentRoutes.js
-    │   └── categoryRoutes.js
+    │   ├── categoryRoutes.js
+    │   ├── issueRoutes.js
+    │   └── commentRoutes.js         # nested under /api/issues/:id/comments
     ├── utils/
     │   ├── AppError.js
     │   ├── generateToken.js         # JWT signing + cookie helper
@@ -125,7 +139,9 @@ CivicFix/
     └── validators/
         ├── authValidators.js
         ├── departmentValidators.js
-        └── categoryValidators.js
+        ├── categoryValidators.js
+        ├── issueValidators.js
+        └── commentValidators.js
 ```
 
 ---
@@ -142,8 +158,7 @@ Controllers and routes are tested end-to-end using the Talend API Tester browser
 
 Development follows a phase-by-phase plan. Rough shape of what's ahead:
 
-- **Phase 4:** Issue backend — create with auto-routing (consumes the Category → Department link from Phase 3), list with geospatial `$near` filtering + pagination, issue detail, status updates with `StatusHistory` audit trail, upvote toggle
-- **Phase 5:** Image upload pipeline (Multer → Cloudinary), Socket.io real-time layer
+- **Phase 5:** Image upload pipeline (Multer → Cloudinary), Socket.io real-time layer, `GET /api/issues/analytics/summary` and `GET /api/departments/:id/analytics` (deferred from earlier phases pending real aggregation data)
 - **Phases 6–8:** React frontend — auth flow, public issue feed with map view, report-issue form
 - **Phase 9:** Admin dashboards & analytics
 - **Phase 10:** In-app + email notifications (Resend) on status change
