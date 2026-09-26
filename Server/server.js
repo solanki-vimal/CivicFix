@@ -6,6 +6,7 @@ const { validateEnv } = require('./config/index');
 validateEnv();
 
 const express = require('express');
+const http = require('http');
 const cors = require('cors');
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
@@ -13,6 +14,7 @@ const session = require('express-session');
 const passport = require('passport');
 const { MongoStore } = require('connect-mongo');
 const connectDB = require('./config/db');
+const { init: initSocket } = require('./config/socket');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 const { generalLimiter } = require('./middleware/rateLimiter');
 
@@ -100,7 +102,14 @@ const startServer = async () => {
     // 1. Establish Database Connection
     await connectDB();
 
-    // 2. Start Express Server listening
+    // 2. Wrap Express in a raw http.Server — Socket.io needs to attach to
+    //    this directly, it can't attach to the Express app object itself.
+    const httpServer = http.createServer(app);
+
+    // 3. Initialize Socket.io on the same server
+    initSocket(httpServer);
+
+    // 4. Start Express Server listening
     const server = app.listen(PORT, () => {
       console.log(
         `🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`

@@ -1,17 +1,22 @@
-// Deferred to later phases, not built here:
+// Deferred to a later phase, not built here:
 // - GET /api/issues/analytics/summary — needs real aggregation data, same
 //   reasoning as departmentController.js deferring dept analytics
-// - Image handling — Multer/Cloudinary pipeline is Phase 5
 //
 // Comments (POST/GET /api/issues/:id/comments) live in
 // controllers/commentController.js, routes/commentRoutes.js — nested under
 // /:id/comments in routes/issueRoutes.js.
+//
+// Image handling (Multer/Cloudinary) is wired into createIssue below via
+// utils/uploadToCloudinary.js — no longer deferred.
 
 const asyncHandler = require('express-async-handler');
 const Issue = require('../models/Issue');
 const StatusHistory = require('../models/StatusHistory');
 const AppError = require('../utils/AppError');
 const { resolveDepartmentForCategory } = require('./categoryController');
+const { uploadIssueImages } = require('../utils/uploadToCloudinary');
+const { emitToIssueRoom, emitGlobal } = require('../config/socket');
+
 
 const populateIssueRefs = (query) =>
   query
@@ -43,6 +48,7 @@ const createIssue = asyncHandler(async (req, res, next) => {
     reportedBy: req.user._id,
     location: { coordinates: [location.lng, location.lat] },
     address,
+    images,
   });
 
   // First StatusHistory entry — fromStatus null, marking the issue's creation.
@@ -52,6 +58,9 @@ const createIssue = asyncHandler(async (req, res, next) => {
     toStatus: 'pending',
     changedBy: req.user._id,
   });
+
+  // Admin dashboard: new issue counter increments live
+  emitGlobal('newIssue', { issueId: issue._id, title: issue.title, department: issue.department });
 
   res.status(201).json({ success: true, data: issue });
 });
@@ -168,6 +177,15 @@ const updateIssueStatus = asyncHandler(async (req, res, next) => {
       toStatus: status,
       changedBy: req.user._id,
       note: status === 'rejected' ? rejectionReason : note,
+    });
+
+    // Real-time: anyone with this issue's detail page open updates live,
+    // no refresh needed
+    emitToIssueRoom(issue._id, 'statusUpdate', {
+      issueId: issue._id,
+      fromStatus,
+      toStatus: status,
+      changedAt: new Date(),
     });
   }
 

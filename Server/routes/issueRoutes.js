@@ -17,13 +17,21 @@ const {
 const { protect, authorize } = require('../middleware/auth');
 const validate = require('../middleware/validate');
 const { validateQuery } = require('../middleware/validate');
+const upload = require('../middleware/upload');
 const {
   createIssueSchema,
   updateStatusSchema,
   listIssuesQuerySchema,
 } = require('../validators/issueValidators');
 
-router.post('/', protect, authorize('citizen'), validate(createIssueSchema), createIssue);
+router.post(
+  '/', 
+  protect, 
+  authorize('citizen'), 
+  upload.array('images', 5),
+  validate(createIssueSchema),  
+  createIssue
+);
 router.get('/', validateQuery(listIssuesQuerySchema), getIssues);
 router.get('/mine', protect, authorize('citizen'), getMyIssues);
 router.get('/:id', getIssueById);

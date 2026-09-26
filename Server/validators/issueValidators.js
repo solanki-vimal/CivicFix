@@ -1,5 +1,10 @@
-// Note: no `images` field yet — Multer/Cloudinary upload pipeline is Phase 5
-// scope. Issue creation here is a plain JSON body, not multipart/form-data.
+// Issue creation is multipart/form-data (images go through Multer, not
+// through this schema — see middleware/upload.js and
+// utils/uploadToCloudinary.js). This schema only validates the text
+// fields Multer parses into req.body. Note: lng/lat are flat top-level
+// fields, not a nested `location` object — multipart/form-data text
+// fields are always flat strings, so a nested object would need the
+// client to JSON-encode it into one field.
 
 const { z } = require('zod');
 
@@ -17,10 +22,11 @@ const createIssueSchema = z.object({
     .min(10, 'Description must be at least 10 characters')
     .max(1000, 'Description must be under 1000 characters'),
   category: objectId,
-  location: z.object({
-    lng: z.number().min(-180).max(180),
-    lat: z.number().min(-90).max(90),
-  }),
+  // Flat fields, not a nested `location` object — multipart/form-data text
+  // fields arrive as flat strings, so z.coerce handles the string->number
+  // conversion the same way listIssuesQuerySchema does for query params.
+  lng: z.coerce.number().min(-180, 'Longitude out of range').max(180, 'Longitude out of range'),
+  lat: z.coerce.number().min(-90, 'Latitude out of range').max(90, 'Latitude out of range'),
   address: z.string().trim().max(300).optional().default(''),
 });
 

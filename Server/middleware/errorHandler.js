@@ -33,6 +33,18 @@ const errorHandler = (error, req, res, next) => {
     message = `${field} already exists`;
   }
 
+  // Multer upload errors (file too large, too many files, wrong field name)
+  if (error.name === 'MulterError') {
+    statusCode = 400;
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      message = 'Each image must be under 5 MB';
+    } else if (error.code === 'LIMIT_FILE_COUNT' || error.code === 'LIMIT_UNEXPECTED_FILE') {
+      message = 'A maximum of 3 images is allowed per issue';
+    } else {
+      message = error.message;
+    }
+  }
+
   // JWT errors
   if (error.name === 'JsonWebTokenError') {
     statusCode = 401;

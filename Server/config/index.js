@@ -16,6 +16,9 @@ const requiredEnvVars = [
   'GOOGLE_CALLBACK_URL',
   'RESEND_API_KEY',
   'RESEND_FROM_EMAIL',
+  'CLOUDINARY_CLOUD_NAME',
+  'CLOUDINARY_API_KEY',
+  'CLOUDINARY_API_SECRET',
 ];
 
 const validateEnv = () => {
