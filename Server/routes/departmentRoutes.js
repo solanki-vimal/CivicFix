@@ -6,6 +6,7 @@ const {
   createDepartment,
   updateDepartment,
   deleteDepartment,
+  getDepartmentAnalytics,
 } = require('../controllers/departmentController');
 
 const { protect, authorize } = require('../middleware/auth');
@@ -16,5 +17,6 @@ router.get('/', getDepartments);
 router.post('/', protect, authorize('super_admin'), validate(createDepartmentSchema), createDepartment);
 router.patch('/:id', protect, authorize('super_admin'), validate(updateDepartmentSchema), updateDepartment);
 router.delete('/:id', protect, authorize('super_admin'), deleteDepartment);
+router.get('/:id/analytics', protect, authorize('super_admin'), getDepartmentAnalytics);
 
 module.exports = router;

@@ -1,6 +1,6 @@
-// IMPORTANT: GET /mine is registered before GET /:id — otherwise Express
-// would match "mine" against the :id param pattern and never reach the
-// dedicated handler.
+// IMPORTANT: both GET /mine and GET /analytics/summary are registered
+// before GET /:id — otherwise Express would match "mine" or "analytics"
+// against the :id param pattern and never reach the dedicated handlers.
 
 const express = require('express');
 const router = express.Router();
@@ -12,6 +12,7 @@ const {
   getIssueById,
   updateIssueStatus,
   toggleUpvote,
+  getIssueAnalyticsSummary,
 } = require('../controllers/issueController');
 
 const { protect, authorize } = require('../middleware/auth');
@@ -34,6 +35,7 @@ router.post(
 );
 router.get('/', validateQuery(listIssuesQuerySchema), getIssues);
 router.get('/mine', protect, authorize('citizen'), getMyIssues);
+router.get('/analytics/summary', protect, authorize('super_admin'), getIssueAnalyticsSummary);
 router.get('/:id', getIssueById);
 router.patch(
   '/:id/status',

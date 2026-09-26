@@ -1,7 +1,3 @@
-// Deferred to a later phase, not built here:
-// - GET /api/issues/analytics/summary — needs real aggregation data, same
-//   reasoning as departmentController.js deferring dept analytics
-//
 // Comments (POST/GET /api/issues/:id/comments) live in
 // controllers/commentController.js, routes/commentRoutes.js — nested under
 // /:id/comments in routes/issueRoutes.js.
@@ -16,7 +12,6 @@ const AppError = require('../utils/AppError');
 const { resolveDepartmentForCategory } = require('./categoryController');
 const { uploadIssueImages } = require('../utils/uploadToCloudinary');
 const { emitToIssueRoom, emitGlobal } = require('../config/socket');
-
 
 const populateIssueRefs = (query) =>
   query
@@ -39,6 +34,10 @@ const createIssue = asyncHandler(async (req, res, next) => {
   } catch (error) {
     return next(error); // AppError from resolveDepartmentForCategory (400)
   }
+
+  // req.files comes from the upload.array('images', 3) middleware in
+  // issueRoutes.js — already validated for type/size/count by Multer.
+  const images = await uploadIssueImages(req.files);
 
   const issue = await Issue.create({
     title,
@@ -215,4 +214,113 @@ const toggleUpvote = asyncHandler(async (req, res, next) => {
   res.status(200).json({ success: true, data: { upvoteCount: issue.upvotes.length } });
 });
 
-module.exports = { createIssue, getIssues, getMyIssues, getIssueById, updateIssueStatus, toggleUpvote };
+
+// @desc   Aggregated city-wide analytics: issues by category/status,
+//         weekly trend (last 12 weeks), average resolution time overall
+//         and per department, and the top 5 unresolved issues by upvotes.
+// @route  GET /api/issues/analytics/summary
+// @access Super Admin
+const getIssuesAnalyticsSummary = asyncHandler(async (req, res) => {
+  const twelveWeeksAgo = new Date();
+  twelveWeeksAgo.setDate(twelveWeeksAgo.getDate() - 12 * 7);
+
+  const [byCategoryRaw, byStatusRaw, weeklyTrendRaw, avgResolutionRaw, departmentPerformanceRaw, topUpvotedRaw] =
+    await Promise.all([
+      // Issues by category
+      Issue.aggregate([
+        { $group: { _id: '$category', count: { $sum: 1 } } },
+        { $lookup: { from: 'categories', localField: '_id', foreignField: '_id', as: 'category' } },
+        { $unwind: '$category' },
+        { $project: { _id: 0, category: '$category.name', count: 1 } },
+        { $sort: { count: -1 } },
+      ]),
+      // Issues by status
+      Issue.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
+      // Issues per week, last 12 weeks
+      Issue.aggregate([
+        { $match: { createdAt: { $gte: twelveWeeksAgo } } },
+        {
+          $group: {
+            _id: { isoWeek: { $isoWeek: '$createdAt' }, isoYear: { $isoWeekYear: '$createdAt' } },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { '_id.isoYear': 1, '_id.isoWeek': 1 } },
+        { $project: { _id: 0, week: '$_id.isoWeek', year: '$_id.isoYear', count: 1 } },
+      ]),
+      // Overall average resolution time, in hours
+      Issue.aggregate([
+        { $match: { status: 'resolved', resolvedAt: { $ne: null } } },
+        { $project: { hours: { $divide: [{ $subtract: ['$resolvedAt', '$createdAt'] }, 3600000] } } },
+        { $group: { _id: null, avgHours: { $avg: '$hours' } } },
+      ]),
+      // Per-department performance: total, resolved, avg resolution hours
+      Issue.aggregate([
+        {
+          $group: {
+            _id: '$department',
+            total: { $sum: 1 },
+            resolved: { $sum: { $cond: [{ $eq: ['$status', 'resolved'] }, 1, 0] } },
+            avgResolutionHours: {
+              $avg: {
+                $cond: [
+                  { $eq: ['$status', 'resolved'] },
+                  { $divide: [{ $subtract: ['$resolvedAt', '$createdAt'] }, 3600000] },
+                  null,
+                ],
+              },
+            },
+          },
+        },
+        { $lookup: { from: 'departments', localField: '_id', foreignField: '_id', as: 'department' } },
+        { $unwind: '$department' },
+        {
+          $project: {
+            _id: 0,
+            department: '$department.name',
+            total: 1,
+            resolved: 1,
+            avgResolutionHours: { $round: [{ $ifNull: ['$avgResolutionHours', 0] }, 1] },
+          },
+        },
+      ]),
+      // Top 5 most-upvoted unresolved issues
+      Issue.aggregate([
+        { $match: { status: { $nin: ['resolved', 'rejected'] } } },
+        { $addFields: { upvoteCount: { $size: '$upvotes' } } },
+        { $sort: { upvoteCount: -1 } },
+        { $limit: 5 },
+        { $project: { _id: 1, title: 1, status: 1, upvoteCount: 1 } },
+      ]),
+    ]);
+
+  // byStatus comes back as an array of { _id, count } — reshape into a flat
+  // object with every status present (even at 0), so the frontend chart
+  // doesn't have to guard against missing keys.
+  const byStatus = { pending: 0, open: 0, in_progress: 0, resolved: 0, rejected: 0 };
+  byStatusRaw.forEach((row) => {
+    byStatus[row._id] = row.count;
+  });
+
+  res.status(200).json({
+    success: true,
+    data: {
+      byCategory: byCategoryRaw,
+      byStatus,
+      weeklyTrend: weeklyTrendRaw,
+      avgResolutionHours: avgResolutionRaw[0] ? Math.round(avgResolutionRaw[0].avgHours * 10) / 10 : 0,
+      departmentPerformance: departmentPerformanceRaw,
+      topUnresolvedByUpvotes: topUpvotedRaw,
+    },
+  });
+});
+
+module.exports = {
+  createIssue,
+  getIssues,
+  getMyIssues,
+  getIssueById,
+  updateIssueStatus,
+  toggleUpvote,
+  getIssuesAnalyticsSummary,
+};
