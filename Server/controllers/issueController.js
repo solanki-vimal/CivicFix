@@ -220,7 +220,7 @@ const toggleUpvote = asyncHandler(async (req, res, next) => {
 //         and per department, and the top 5 unresolved issues by upvotes.
 // @route  GET /api/issues/analytics/summary
 // @access Super Admin
-const getIssuesAnalyticsSummary = asyncHandler(async (req, res) => {
+const getIssueAnalyticsSummary = asyncHandler(async (req, res) => {
   const twelveWeeksAgo = new Date();
   twelveWeeksAgo.setDate(twelveWeeksAgo.getDate() - 12 * 7);
 
@@ -322,5 +322,6 @@ module.exports = {
   getIssueById,
   updateIssueStatus,
   toggleUpvote,
-  getIssuesAnalyticsSummary,
+  getIssueAnalyticsSummary,
+  getIssuesAnalyticsSummary: getIssueAnalyticsSummary,
 };

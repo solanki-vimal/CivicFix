@@ -110,7 +110,7 @@ const startServer = async () => {
     initSocket(httpServer);
 
     // 4. Start Express Server listening
-    const server = app.listen(PORT, () => {
+    const server = httpServer.listen(PORT, () => {
       console.log(
         `🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`
       );
