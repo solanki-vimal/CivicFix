@@ -4,7 +4,7 @@ A Web-Based Civic Issue Reporting and Resolution Tracking System.
 
 A full-stack MERN web application where citizens report local infrastructure problems (potholes, garbage, broken streetlights, water leakage) with photos and GPS location. Issues are publicly visible, community-upvotable, and tracked through a complete resolution lifecycle by municipal authority accounts.
 
-> **Status:** Backend foundation, authentication, Department/Category management, and the full Issue backend (including comments) are complete and tested end-to-end against a live database. Image uploads, real-time updates, and the frontend are still ahead — see [Roadmap](#roadmap).
+> **Status:** Backend foundation, authentication, Department/Category management, the full Issue backend (including comments), image uploads, real-time updates, and analytics are complete and tested end-to-end against a live database. The React frontend is still ahead — see [Roadmap](#roadmap).
 
 ---
 
@@ -44,7 +44,17 @@ A full-stack MERN web application where citizens report local infrastructure pro
 - A generic `validateQuery` middleware was added alongside the existing body validator, for Zod-validated query-string parameters (with `z.coerce` for numeric ones)
 - Fully tested end-to-end against live Atlas: creation + auto-routing correctness, geo search, pagination, cross-department `403` on status updates, rejection without a reason correctly blocked, upvote toggle, and comment authoring/listing including the official-update badge
 
-**Not yet built** (planned — see roadmap below): image uploads, real-time updates, admin dashboards, notifications, frontend.
+**Implemented — Phase 5 (Uploads, real-time, analytics):**
+- Image upload pipeline: Multer memory-storage middleware (type/size/count limits: 3 images, 5MB each, jpg/png/webp only) streams buffers directly to Cloudinary — never written to disk — with a resize-1200px/quality-80/WebP transformation applied on upload
+- Issue creation switched to `multipart/form-data`; `lng`/`lat` are flat top-level fields rather than a nested `location` object, since multipart text fields can't carry nested JSON without extra client-side encoding
+- Socket.io wired onto the same `http.Server` as Express (`server.js` now uses `http.createServer(app)` rather than `app.listen()` directly): an `issue:{id}` room a client explicitly joins/leaves for one issue's detail page, plus an unscoped global broadcast channel for the admin dashboard's live new-issue counter
+- `statusUpdate` emits to the relevant issue's room on every real status change; `newIssue` broadcasts globally on creation
+- `GET /api/issues/analytics/summary` (`super_admin`): issues by category/status, 12-week trend, average resolution time overall and per department, top 5 unresolved issues by upvotes
+- `GET /api/departments/:id/analytics` (`dept_admin` scoped to their own department, `super_admin` any): open issue count, resolved this month vs. last month, staff workload
+- Cloudinary env vars moved from present-but-unvalidated to required in `config/index.js`, now that they're actually read
+- Fully tested end-to-end against live Atlas: real image upload + Cloudinary URL verification, Multer limit errors, geo search radius behavior, live `statusUpdate`/`newIssue` events confirmed via a standalone Socket.io test page, upvote toggle, comment authoring, and both analytics endpoints including the department-scoping `403` check
+
+**Not yet built** (planned — see roadmap below): admin dashboard UI, in-app/email notifications on status change, frontend.
 
 ---
 
@@ -58,10 +68,12 @@ A full-stack MERN web application where citizens report local infrastructure pro
 | Auth | Passport.js (Local + Google OAuth2), JWT, bcrypt |
 | Validation | Zod |
 | Email | Resend |
+| File storage | Multer (memory storage) + Cloudinary (resize/quality/WebP transform) |
+| Real-time | Socket.io (room-scoped + global events) |
 | Security | Helmet, express-rate-limit, httpOnly/SameSite cookies |
 | Sessions | express-session, connect-mongo (reserved for admin dashboard preferences) |
 
-File storage (Cloudinary), real-time updates (Socket.io), and the React frontend will be added in later stages of development and documented here once implemented.
+The React frontend will be added in later stages of development and documented here once implemented.
 
 ---
 
@@ -83,14 +95,13 @@ curl http://localhost:5000/health
 
 ### Environment Variables
 
-See `.env.example` for the full list. As of Phase 3, `config/index.js` validates 12 required variables at startup:
+See `.env.example` for the full list. As of Phase 5, `config/index.js` validates 15 required variables at startup:
 
 - `PORT`, `NODE_ENV`, `CLIENT_URL`, `MONGO_URI`, `SESSION_SECRET`
 - `JWT_SECRET`, `JWT_EXPIRES_IN`
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`
 - `RESEND_API_KEY`, `RESEND_FROM_EMAIL`
-
-Cloudinary variables are present in `.env.example` for convenience but are **not yet validated at startup** — they stay out of `validateEnv()` until the Phase 5 upload pipeline actually reads them, so a missing Cloudinary key doesn't block the server from booting over a feature that isn't built yet.
+- `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
 
 ---
 
@@ -106,18 +117,21 @@ CivicFix/
     ├── config/
     │   ├── db.js                    # MongoDB connection
     │   ├── index.js                 # Environment variable validation
-    │   └── passport.js              # Local + Google OAuth2 strategies
+    │   ├── passport.js              # Local + Google OAuth2 strategies
+    │   ├── cloudinary.js            # Cloudinary v2 credentials
+    │   └── socket.js                # Socket.io init + emit helpers
     ├── controllers/
     │   ├── authController.js
-    │   ├── departmentController.js
+    │   ├── departmentController.js  # includes getDepartmentAnalytics
     │   ├── categoryController.js
-    │   ├── issueController.js
+    │   ├── issueController.js       # includes getIssuesAnalyticsSummary
     │   └── commentController.js
     ├── middleware/
     │   ├── auth.js                  # protect + authorize(...roles)
-    │   ├── errorHandler.js
+    │   ├── errorHandler.js          # includes Multer error handling
     │   ├── rateLimiter.js           # authLimiter + generalLimiter
-    │   └── validate.js              # generic Zod body + query validators
+    │   ├── validate.js              # generic Zod body + query validators
+    │   └── upload.js                # Multer memory storage config
     ├── models/
     │   ├── User.js
     │   ├── Department.js
@@ -128,14 +142,15 @@ CivicFix/
     │   └── Notification.js
     ├── routes/
     │   ├── authRoutes.js
-    │   ├── departmentRoutes.js
+    │   ├── departmentRoutes.js      # includes /:id/analytics
     │   ├── categoryRoutes.js
-    │   ├── issueRoutes.js
+    │   ├── issueRoutes.js           # includes /analytics/summary
     │   └── commentRoutes.js         # nested under /api/issues/:id/comments
     ├── utils/
     │   ├── AppError.js
     │   ├── generateToken.js         # JWT signing + cookie helper
-    │   └── sendEmail.js             # Resend wrapper
+    │   ├── sendEmail.js             # Resend wrapper
+    │   └── uploadToCloudinary.js    # buffer -> Cloudinary stream upload
     └── validators/
         ├── authValidators.js
         ├── departmentValidators.js
@@ -158,10 +173,9 @@ Controllers and routes are tested end-to-end using the Talend API Tester browser
 
 Development follows a phase-by-phase plan. Rough shape of what's ahead:
 
-- **Phase 5:** Image upload pipeline (Multer → Cloudinary), Socket.io real-time layer, `GET /api/issues/analytics/summary` and `GET /api/departments/:id/analytics` (deferred from earlier phases pending real aggregation data)
 - **Phases 6–8:** React frontend — auth flow, public issue feed with map view, report-issue form
-- **Phase 9:** Admin dashboards & analytics
-- **Phase 10:** In-app + email notifications (Resend) on status change
+- **Phase 9:** Admin dashboard UI (consuming the analytics endpoints built in Phase 5)
+- **Phase 10:** In-app + email notifications (Resend) on status change, including the `user:{id}` Socket.io room deferred from Phase 5
 - **Phase 11:** PWA support, polish
 - **Phase 12:** Deployment (Vercel + Render + Atlas)
 
