@@ -24,7 +24,7 @@ const populateIssueRefs = (query) =>
 // @route  POST /api/issues
 // @access Citizen
 const createIssue = asyncHandler(async (req, res, next) => {
-  const { title, description, category, location, address } = req.body;
+  const { title, description, category, lng, lat, address } = req.body;
 
   // This is the auto-routing mechanism itself: the department is derived
   // from the category, never trusted from the client body.
@@ -45,7 +45,7 @@ const createIssue = asyncHandler(async (req, res, next) => {
     category,
     department,
     reportedBy: req.user._id,
-    location: { coordinates: [location.lng, location.lat] },
+    location: { type: 'Point', coordinates: [lng, lat] },
     address,
     images,
   });
@@ -96,7 +96,20 @@ const getIssues = asyncHandler(async (req, res) => {
   }
   query = populateIssueRefs(query);
 
-  const [issues, total] = await Promise.all([query, Issue.countDocuments(filter)]);
+  // $near sorts by distance and cannot be used in countDocuments (which runs an aggregation pipeline).
+  // $geoWithin with $centerSphere counts matching documents within the radius without requiring sort.
+  const countFilter = usingGeo
+    ? {
+        ...filter,
+        location: {
+          $geoWithin: {
+            $centerSphere: [[lng, lat], radius / 6378100],
+          },
+        },
+      }
+    : filter;
+
+  const [issues, total] = await Promise.all([query, Issue.countDocuments(countFilter)]);
 
   res.status(200).json({
     success: true,

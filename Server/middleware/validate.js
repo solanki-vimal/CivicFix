@@ -12,7 +12,9 @@ const validate = (schema) => (req, res, next) => {
   } catch (error) {
     if (error instanceof ZodError || error.name === 'ZodError') {
       const issues = error.issues || error.errors || [];
-      const message = issues.map((e) => e.message).join(', ');
+      const message = issues
+        .map((e) => (e.path && e.path.length ? `${e.path.join('.')}: ${e.message}` : e.message))
+        .join(', ');
       return next(new AppError(message || 'Invalid request data', 400));
     }
     next(error);
@@ -29,7 +31,9 @@ const validateQuery = (schema) => (req, res, next) => {
   } catch (error) {
     if (error instanceof ZodError || error.name === 'ZodError') {
       const issues = error.issues || error.errors || [];
-      const message = issues.map((e) => e.message).join(', ');
+      const message = issues
+        .map((e) => (e.path && e.path.length ? `${e.path.join('.')}: ${e.message}` : e.message))
+        .join(', ');
       return next(new AppError(message || 'Invalid query parameters', 400));
     }
     next(error);
