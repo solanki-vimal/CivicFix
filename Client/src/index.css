@@ -1,0 +1,97 @@
+/*
+   Design tokens for CivicFix. Colors, type, and status semantics are
+   defined once here — every page and component in later phases should
+   reference these variables rather than hardcoding hex values, so a
+   future palette adjustment only happens in one place. */
+
+:root {
+  /* Core palette */
+  --color-paper: #eff2ed;      /* pale sage background — not the cream/terracotta default */
+  --color-paper-raised: #ffffff;
+  --color-ink: #172420;        /* near-black with a green undertone, not pure #000/#111 */
+  --color-ink-muted: #4b564f;
+  --color-border: #d6ddd1;
+
+  --color-brand: #0f5257;      /* deep civic teal — primary actions, links, focus rings */
+  --color-brand-dark: #0b3d41;
+  --color-accent: #d6a419;     /* marigold — secondary CTAs, highlights (not terracotta) */
+
+  /* Status semantics — matches the badge flow described in the project doc:
+     grey (pending) -> blue (open) -> amber (in_progress) -> green/red (resolved/rejected) */
+  --color-status-pending: #8a8f87;
+  --color-status-open: #2e6f95;
+  --color-status-in-progress: #d6a419;
+  --color-status-resolved: #2f7d5d;
+  --color-status-rejected: #b23a2e;
+
+  --color-danger: #b23a2e;
+  --color-success: #2f7d5d;
+
+  /* Type */
+  --font-display: 'Newsreader', Georgia, serif;
+  --font-body: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+
+  /* Spacing + radius — modest radius only on interactive elements,
+     not applied uniformly to everything */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --shadow-card: 0 1px 3px rgba(23, 36, 32, 0.08), 0 1px 2px rgba(23, 36, 32, 0.06);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  line-height: 1.25;
+  margin: 0 0 0.5em;
+  color: var(--color-ink);
+}
+
+p {
+  margin: 0 0 1em;
+  max-width: 65ch;
+}
+
+a {
+  color: var(--color-brand);
+}
+
+button,
+input {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* Visible keyboard focus everywhere — never suppressed */
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
