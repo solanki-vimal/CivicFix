@@ -4,7 +4,7 @@ A Web-Based Civic Issue Reporting and Resolution Tracking System.
 
 A full-stack MERN web application where citizens report local infrastructure problems (potholes, garbage, broken streetlights, water leakage) with photos and GPS location. Issues are publicly visible, community-upvotable, and tracked through a complete resolution lifecycle by municipal authority accounts.
 
-> **Status:** Backend foundation, authentication, Department/Category management, the full Issue backend (including comments), image uploads, real-time updates, and analytics are complete and tested end-to-end against a live database. The React frontend is still ahead — see [Roadmap](#roadmap).
+> **Status:** The full backend (auth, RBAC, all 7 collections, Issues with auto-routing/images/real-time/analytics) and the frontend's auth flow are complete and tested end-to-end. The public issue feed, map, and report-issue form are still ahead — see [Roadmap](#roadmap).
 
 ---
 
@@ -54,11 +54,25 @@ A full-stack MERN web application where citizens report local infrastructure pro
 - Cloudinary env vars moved from present-but-unvalidated to required in `config/index.js`, now that they're actually read
 - Fully tested end-to-end against live Atlas: real image upload + Cloudinary URL verification, Multer limit errors, geo search radius behavior, live `statusUpdate`/`newIssue` events confirmed via a standalone Socket.io test page, upvote toggle, comment authoring, and both analytics endpoints including the department-scoping `403` check
 
-**Not yet built** (planned — see roadmap below): admin dashboard UI, in-app/email notifications on status change, frontend.
+**Implemented — Phase 6 (React frontend: auth flow):**
+- Vite + React scaffold (`Client/`), React Router for navigation
+- `AuthContext` restores the session on load via `GET /me`, so a page refresh doesn't log the user out; `SocketContext` connects via `socket.io-client`, scoped to only what the backend currently supports (issue rooms + global broadcasts, no authenticated user room yet)
+- Axios client configured with `withCredentials: true` — required for the httpOnly JWT cookie to actually be sent
+- Login and Signup pages built with React Hook Form + Zod, mirroring the backend's validation rules; Signup includes a confirm-password field (client-side only, stripped before the API call) and a show/hide toggle
+- Google OAuth as a real full-page redirect (`window.location.href`), matching the backend's redirect-based flow rather than an XHR call
+- `ProtectedRoute` and `PublicOnlyRoute` both wait for the initial session check before deciding whether to redirect, avoiding a flash-redirect on every page load
+- A placeholder `/dashboard` route — the exact path the backend's Google OAuth callback redirects to — showing the logged-in user's name, email, role, and live Socket.io connection status
+- Design tokens (sage/teal/marigold palette, Newsreader + IBM Plex Sans type, the doc's status-badge colors) defined once as CSS variables in `index.css` for later phases to reuse
+- Fully tested in-browser end-to-end: signup, session persistence across refresh, logout actually blocking the protected route (not just hiding a button), and Google OAuth
+- The forgot-password UI is deliberately not built yet — it's explicitly Phase 11 scope in the project plan, even though the backend endpoint exists since Phase 2
+
+**Not yet built** (planned — see roadmap below): public issue feed, map, report-issue form, admin dashboard UI, notifications.
 
 ---
 
 ## Tech Stack (implemented so far)
+
+**Backend**
 
 | Layer | Technology |
 |---|---|
@@ -73,35 +87,59 @@ A full-stack MERN web application where citizens report local infrastructure pro
 | Security | Helmet, express-rate-limit, httpOnly/SameSite cookies |
 | Sessions | express-session, connect-mongo (reserved for admin dashboard preferences) |
 
-The React frontend will be added in later stages of development and documented here once implemented.
+**Frontend**
+
+| Layer | Technology |
+|---|---|
+| Build tool | Vite |
+| UI | React 18 |
+| Routing | React Router 7 |
+| HTTP client | Axios (`withCredentials: true` for the cookie-based JWT) |
+| Forms | React Hook Form + Zod |
+| Real-time | socket.io-client |
+
+React-Leaflet (map), Recharts (dashboards), and vite-plugin-pwa will be added as the phases that need them are built.
 
 ---
 
 ## Getting Started
 
+Backend and frontend run as two separate processes, in two terminals.
+
+**Backend:**
 ```bash
 cd Server
 npm install
 cp .env.example .env   # then fill in your own values
 npm run dev
 ```
-
-Server starts on `http://localhost:5000` (or the `PORT` you set in `.env`).
-
-Confirm it's running:
+Starts on `http://localhost:5000` (or the `PORT` you set in `.env`). Confirm it's running:
 ```bash
 curl http://localhost:5000/health
 ```
 
+**Frontend:**
+```bash
+cd Client
+npm install
+npm run dev
+```
+Starts on `http://localhost:5173`. This exact port matters — the backend's `CLIENT_URL`, CORS policy, and Socket.io CORS check are all set to `http://localhost:5173`; if Vite falls back to a different port because 5173 is already in use, requests will fail CORS.
+
 ### Environment Variables
 
-See `.env.example` for the full list. As of Phase 5, `config/index.js` validates 15 required variables at startup:
+**Server** — see `Server/.env.example` for the full list. As of Phase 5, `config/index.js` validates 15 required variables at startup:
 
 - `PORT`, `NODE_ENV`, `CLIENT_URL`, `MONGO_URI`, `SESSION_SECRET`
 - `JWT_SECRET`, `JWT_EXPIRES_IN`
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`
 - `RESEND_API_KEY`, `RESEND_FROM_EMAIL`
 - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
+
+**Client** — see `Client/.env.example`. Both fall back to sensible localhost defaults, so a `.env` file is optional for local development:
+
+- `VITE_API_BASE_URL` (default `http://localhost:5000/api`)
+- `VITE_SOCKET_URL` (default `http://localhost:5000`)
 
 ---
 
@@ -157,6 +195,33 @@ CivicFix/
         ├── categoryValidators.js
         ├── issueValidators.js
         └── commentValidators.js
+
+Client/
+├── index.html
+├── vite.config.js
+├── .env.example
+└── src/
+    ├── main.jsx                     # entry point: Router + AuthProvider + SocketProvider
+    ├── App.jsx                      # route definitions
+    ├── index.css                    # design tokens (palette, type, status colors)
+    ├── api/
+    │   ├── axiosClient.js           # withCredentials: true for the cookie-based JWT
+    │   └── authApi.js
+    ├── context/
+    │   ├── AuthContext.jsx
+    │   └── SocketContext.jsx
+    ├── components/
+    │   ├── ProtectedRoute.jsx
+    │   ├── PublicOnlyRoute.jsx
+    │   ├── AuthLayout.jsx           # shared split-panel shell for Login/Signup
+    │   ├── FormField.jsx            # labeled input, optional show/hide toggle
+    │   └── GoogleButton.jsx
+    ├── pages/
+    │   ├── LoginPage.jsx
+    │   ├── SignupPage.jsx
+    │   └── DashboardPage.jsx        # placeholder protected page
+    └── validation/
+        └── authSchemas.js           # mirrors Server/validators/authValidators.js
 ```
 
 ---
@@ -167,13 +232,15 @@ Each week's models are tested and validated against a live MongoDB Atlas connect
 
 Controllers and routes are tested end-to-end using the Talend API Tester browser extension against a running local server connected to live Atlas: request/response shapes, status codes, authorization boundaries, rate limiting, cookie behavior, and edge cases (duplicate keys, invalid tokens, cross-role access) are all verified manually before a phase is considered complete.
 
+Frontend features are tested manually in-browser against the real running backend — actual clicks and form input, not just that a component renders — checking both the visible behavior and the browser console/network tab for anything that fails silently.
+
 ---
 
 ## Roadmap
 
 Development follows a phase-by-phase plan. Rough shape of what's ahead:
 
-- **Phases 6–8:** React frontend — auth flow, public issue feed with map view, report-issue form
+- **Phases 7–8:** React frontend — public issue feed with map view, report-issue form
 - **Phase 9:** Admin dashboard UI (consuming the analytics endpoints built in Phase 5)
 - **Phase 10:** In-app + email notifications (Resend) on status change, including the `user:{id}` Socket.io room deferred from Phase 5
 - **Phase 11:** PWA support, polish
