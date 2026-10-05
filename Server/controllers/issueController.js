@@ -144,7 +144,15 @@ const getIssueById = asyncHandler(async (req, res, next) => {
   if (!issue) {
     return next(new AppError('Issue not found', 404));
   }
-  res.status(200).json({ success: true, data: issue });
+  // Status timeline — embedded directly in
+  // the detail response rather than a separate endpoint, since the detail
+  // page always needs both together. Comments stay separate (own
+  // pagination, can legitimately grow long).
+  const statusHistory = await StatusHistory.find({ issue: issue._id })
+    .sort({ createdAt: 1 })
+    .populate('changedBy', 'name avatar role');
+
+  res.status(200).json({ success: true, data: { ...issue.toObject(), statusHistory } });
 });
 
 // @desc   Update status, assignee, priority, or rejection reason.
@@ -175,7 +183,13 @@ const updateIssueStatus = asyncHandler(async (req, res, next) => {
   if (status) issue.status = status;
   if (assignedTo !== undefined) issue.assignedTo = assignedTo;
   if (priority) issue.priority = priority;
-  if (status === 'rejected') issue.rejectionReason = rejectionReason;
+
+  if (status === 'rejected') {
+    issue.rejectionReason = rejectionReason;
+  } else if(status && status !== 'rejected') {
+    issue.rejectionReason = null;
+  }
+  
   if (status === 'resolved') issue.resolvedAt = new Date();
 
   await issue.save();
