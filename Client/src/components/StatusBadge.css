@@ -1,0 +1,36 @@
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.status-badge::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status-pending {
+  background: var(--color-status-pending);
+}
+.status-open {
+  background: var(--color-status-open);
+}
+.status-in_progress {
+  background: var(--color-status-in-progress);
+  color: var(--color-ink);
+}
+.status-resolved {
+  background: var(--color-status-resolved);
+}
+.status-rejected {
+  background: var(--color-status-rejected);
+}

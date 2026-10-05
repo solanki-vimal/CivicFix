@@ -63,7 +63,7 @@ const googleCallback = (req, res, next) => {
     const token = generateToken(user._id);
     res.cookie('token', token, cookieOptions());
 
-    res.redirect(`${process.env.CLIENT_URL}/dashboard`);
+    res.redirect(process.env.CLIENT_URL);
   })(req, res, next);
 };
 

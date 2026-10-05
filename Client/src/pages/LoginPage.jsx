@@ -25,7 +25,10 @@ export default function LoginPage() {
     setServerError('');
     try {
       await login(values);
-      const redirectTo = location.state?.from?.pathname || '/dashboard';
+      // If the user got here via ProtectedRoute bouncing them off some other
+      // page (e.g. clicking upvote while logged out), return them there.
+      // Otherwise land on the public feed
+      const redirectTo = location.state?.from?.pathname || '/';
       navigate(redirectTo, { replace: true });
     } catch (err) {
       setServerError(err.response?.data?.message || 'Something went wrong. Please try again.');

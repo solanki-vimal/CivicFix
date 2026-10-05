@@ -1,0 +1,27 @@
+.upvote-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-brand);
+  background: var(--color-paper-raised);
+  color: var(--color-brand);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.upvote-button.active {
+  background: var(--color-brand);
+  color: #fff;
+}
+
+.upvote-button:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.upvote-label {
+  font-weight: 500;
+  font-size: 0.85rem;
+}

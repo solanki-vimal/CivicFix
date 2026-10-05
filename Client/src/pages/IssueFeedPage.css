@@ -1,0 +1,58 @@
+.feed-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.feed-header h1 {
+  margin-bottom: 4px;
+}
+
+.feed-geo-error {
+  color: var(--color-danger);
+  font-size: 0.85rem;
+}
+
+.feed-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  margin-top: 12px;
+}
+
+@media (min-width: 900px) {
+  .feed-split {
+    grid-template-columns: 5fr 7fr;
+    align-items: start;
+  }
+  .feed-map {
+    position: sticky;
+    top: 24px;
+    height: calc(100vh - 160px);
+  }
+}
+
+.feed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.feed-map {
+  height: 420px;
+}
+
+.feed-empty,
+.feed-loading,
+.feed-error {
+  color: var(--color-ink-muted);
+  padding: 16px 0;
+}
+
+.feed-error {
+  color: var(--color-danger);
+}
+
+.feed-sentinel {
+  height: 1px;
+}

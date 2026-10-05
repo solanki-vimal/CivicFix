@@ -26,7 +26,8 @@ export default function SignupPage() {
       // confirmPassword is a client-side typo guard only — the API never sees it.
       const { confirmPassword, ...credentials } = values;
       await signup(credentials);
-      navigate('/dashboard', { replace: true });
+      // Land on the public feed (home page)
+      navigate('/', { replace: true });
     } catch (err) {
       setServerError(err.response?.data?.message || 'Something went wrong. Please try again.');
     }
