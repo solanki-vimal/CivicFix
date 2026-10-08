@@ -20,35 +20,40 @@ function EyeOffIcon() {
 }
 
 // forwardRef is required here. react-hook-form's register() returns a `ref`
-// that has to land on the real <input> DOM node so it can read the field's
+// that has to land on the real form control so it can read the field's
 // value. In React 18 a plain function component never receives `ref` as a
-// prop, so without forwardRef every field reads as empty and validation
-// fails on every field no matter what was typed.
+// prop, so without forwardRef every field reads as empty.
 //
-// `revealable` adds a show/hide button, and only applies to type="password".
+// `as` renders a <select> or <textarea> instead of an <input> (options go in
+// as children for a select). `revealable` adds a show/hide button and only
+// applies to type="password" inputs.
 const FormField = forwardRef(function FormField(
-  { label, error, revealable = false, type = 'text', id, ...inputProps },
+  { label, error, revealable = false, type = 'text', as: Control = 'input', id, children, ...controlProps },
   ref
 ) {
   const [visible, setVisible] = useState(false);
 
-  const canReveal = type === 'password' && revealable;
+  const isInput = Control === 'input';
+  const canReveal = isInput && type === 'password' && revealable;
   const inputType = canReveal && visible ? 'text' : type;
   const errorId = id ? `${id}-error` : undefined;
+
+  const inputOnlyProps = isInput ? { type: inputType, className: canReveal ? 'has-toggle' : undefined } : {};
 
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
       <div className="input-wrap">
-        <input
+        <Control
           ref={ref}
           id={id}
-          type={inputType}
-          className={canReveal ? 'has-toggle' : undefined}
           aria-invalid={error ? 'true' : undefined}
           aria-describedby={error ? errorId : undefined}
-          {...inputProps}
-        />
+          {...inputOnlyProps}
+          {...controlProps}
+        >
+          {children}
+        </Control>
         {canReveal && (
           <button
             type="button"

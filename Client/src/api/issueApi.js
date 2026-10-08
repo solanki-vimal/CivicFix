@@ -32,3 +32,28 @@ export const addComment = async (issueId, text) => {
   const { data } = await axiosClient.post(`/issues/${issueId}/comments`, { text });
   return data; // { success, data: comment }
 };
+
+// Builds the multipart/form-data body POST /api/issues expects: flat text
+// fields (lng/lat are separate, not a nested object) plus up to 3 files all
+// under the field name "images" (Server/middleware/upload.js).
+//
+// The explicit Content-Type matters: axiosClient defaults to
+// application/json, and axios 1.x converts a FormData body into JSON when it
+// sees a JSON content type — silently dropping the files. Naming
+// multipart/form-data here stops that, and the browser still fills in the
+// boundary itself.
+export const createIssue = async ({ title, description, category, location, address, images = [] }) => {
+  const formData = new FormData();
+  formData.append('title', title);
+  formData.append('description', description);
+  formData.append('category', category);
+  formData.append('lng', String(location.lng));
+  formData.append('lat', String(location.lat));
+  if (address) formData.append('address', address);
+  images.forEach((file) => formData.append('images', file));
+
+  const { data } = await axiosClient.post('/issues', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data; // { success, data: issue }
+};

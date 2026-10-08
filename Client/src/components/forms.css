@@ -1,3 +1,5 @@
+/* src/components/forms.css */
+
 .field {
   margin-bottom: 18px;
 }
@@ -10,7 +12,9 @@
   color: var(--color-ink);
 }
 
-.field input {
+.field input,
+.field select,
+.field textarea {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--color-border);
@@ -19,7 +23,15 @@
   color: var(--color-ink);
 }
 
-.field input:focus-visible {
+.field textarea {
+  resize: vertical;
+  min-height: 110px;
+  line-height: 1.5;
+}
+
+.field input:focus-visible,
+.field select:focus-visible,
+.field textarea:focus-visible {
   border-color: var(--color-brand);
 }
 
@@ -127,4 +139,30 @@
 
 .reveal-toggle:hover {
   color: var(--color-ink);
+}
+
+/* Secondary action (add photos, use my location) — sized to its content,
+   unlike .btn which fills its container */
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-brand);
+  background: var(--color-paper-raised);
+  color: var(--color-brand);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: var(--color-paper);
+}
+
+.btn-secondary[aria-disabled='true'],
+.btn-secondary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }

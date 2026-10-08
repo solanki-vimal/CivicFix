@@ -13,6 +13,11 @@ export default function Navbar() {
     navigate('/login', { replace: true });
   };
 
+  // Only citizens can create issues (the backend rejects other roles), so the
+  // link is hidden for staff/admins. Logged-out visitors still see it:
+  // /report is protected, so they're sent to log in and returned afterwards.
+  const canReport = !isAuthenticated || user.role === 'citizen';
+
   return (
     <header className="navbar">
       <Link to="/" className="navbar-brand">
@@ -20,6 +25,11 @@ export default function Navbar() {
       </Link>
 
       <nav className="navbar-links">
+        {canReport && (
+          <Link to="/report" className={isAuthenticated ? 'navbar-cta' : undefined}>
+            Report an issue
+          </Link>
+        )}
         {isAuthenticated ? (
           <>
             <span className="navbar-username">{user.name}</span>
