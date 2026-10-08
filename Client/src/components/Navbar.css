@@ -26,6 +26,10 @@
   font-size: 0.95rem;
 }
 
+.navbar-username {
+  font-size: 0.95rem;
+}
+
 .navbar-cta {
   background: var(--color-accent);
   color: var(--color-ink);

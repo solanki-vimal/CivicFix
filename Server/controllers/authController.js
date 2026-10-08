@@ -71,7 +71,8 @@ const googleCallback = (req, res, next) => {
 // @route  POST /api/auth/logout
 // @access Private
 const logout = asyncHandler(async (req, res) => {
-  res.clearCookie('token', cookieOptions());
+  const { maxAge, ...clearOptions } = cookieOptions();
+  res.clearCookie('token', cookieOptions);
   res.status(200).json({ success: true, message: 'Logged out' });
 });
 
