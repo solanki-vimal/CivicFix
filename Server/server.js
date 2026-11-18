@@ -77,6 +77,8 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/departments', require('./routes/departmentRoutes'));
 app.use('/api/categories', require('./routes/categoryRoutes'));
 app.use('/api/issues', require('./routes/issueRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
+app.use('/api/analytics', require('./routes/analyticsRoutes'));
 
 // Basic health check route — confirms the server is up and DB is connected
 app.get('/health', (req, res) => {
