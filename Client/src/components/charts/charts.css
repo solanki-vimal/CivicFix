@@ -1,0 +1,129 @@
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+  margin: 20px 0 28px;
+}
+
+.kpi-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 18px;
+  background: var(--color-paper-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.kpi-label {
+  font-size: 0.88rem;
+  color: var(--color-ink-muted);
+}
+
+.kpi-value {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+.kpi-note {
+  font-size: 0.82rem;
+  color: var(--color-ink-muted);
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 20px;
+}
+
+.chart-card {
+  padding: 18px 20px 20px;
+  background: var(--color-paper-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  min-width: 0; /* lets a chart shrink inside the grid instead of overflowing */
+}
+
+.chart-card h2 {
+  font-size: 1.1rem;
+  margin-bottom: 14px;
+}
+
+.chart-card-wide {
+  grid-column: 1 / -1;
+}
+
+.chart-empty {
+  color: var(--color-ink-muted);
+  margin: 8px 0;
+}
+
+.chart-note {
+  margin: 10px 0 0;
+  font-size: 0.85rem;
+  color: var(--color-ink-muted);
+}
+
+.donut {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.donut-chart {
+  flex: 0 0 200px;
+  height: 200px;
+}
+
+.donut-legend {
+  flex: 1 1 160px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.donut-legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex: none;
+}
+
+.legend-label {
+  flex: 1;
+}
+
+.legend-percent {
+  width: 44px;
+  text-align: right;
+  color: var(--color-ink-muted);
+  font-size: 0.85rem;
+}
+
+.trend {
+  height: 260px;
+}
+
+.chart-tooltip {
+  background: var(--color-paper-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-size: 0.85rem;
+}
+
+.density-map {
+  width: 100%;
+  height: 380px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}

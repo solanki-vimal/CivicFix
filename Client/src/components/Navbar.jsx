@@ -32,6 +32,10 @@ export default function Navbar() {
         )}
         {isAuthenticated ? (
           <>
+            {/* Plain text, not a link — there's no dashboard/account page
+                to send this to yet. Revisit once Phase 9 adds one. */}
+            {user.role === 'citizen' && <Link to="/my-reports">My reports</Link>}
+            {(user.role === 'dept_admin' || user.role === 'super_admin') && <Link to="/admin">Dashboard</Link>}
             <span className="navbar-username">{user.name}</span>
             <button type="button" className="navbar-logout" onClick={handleLogout}>
               Log out

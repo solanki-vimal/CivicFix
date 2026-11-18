@@ -1,0 +1,99 @@
+.dash-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.dash-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.dash-header h1 {
+  margin-bottom: 2px;
+}
+
+.dash-scope {
+  margin: 0;
+  color: var(--color-ink-muted);
+}
+
+.dash-filter {
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-paper-raised);
+  color: var(--color-ink);
+}
+
+.dash-loading,
+.route-loading {
+  color: var(--color-ink-muted);
+  padding: 24px 0;
+}
+
+.dash-error {
+  color: var(--color-danger);
+  padding: 16px 0;
+}
+
+/* Previous figures stay visible (dimmed) while a new department loads */
+.dash-busy {
+  opacity: 0.55;
+  transition: opacity 0.15s ease;
+}
+
+.workload {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.workload li {
+  display: grid;
+  grid-template-columns: minmax(90px, 1.2fr) 2fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+}
+
+.workload-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.workload-bar span {
+  display: block;
+  height: 100%;
+  background: var(--color-brand);
+}
+
+.workload-unit {
+  color: var(--color-ink-muted);
+  font-size: 0.82rem;
+}
+
+.top-issues {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.top-issues li {
+  padding: 8px 0;
+}
+
+.top-issues li a {
+  margin-right: 8px;
+  font-weight: 500;
+}
+
+.top-issues-votes {
+  margin-left: 8px;
+  font-size: 0.85rem;
+  color: var(--color-ink-muted);
+}

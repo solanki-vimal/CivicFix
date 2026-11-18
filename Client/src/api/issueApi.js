@@ -57,3 +57,16 @@ export const createIssue = async ({ title, description, category, location, addr
   });
   return data; // { success, data: issue }
 };
+
+// The logged-in citizen's own reports, newest first (Server: GET /api/issues/mine).
+// The backend only supports page/limit here, not the feed's filters.
+export const getMyIssues = async ({ page, limit } = {}) => {
+  const { data } = await axiosClient.get('/issues/mine', { params: { page, limit } });
+  return data; // { success, data: [...issues], pagination }
+};
+
+// export const updateIssueStatus = async (id, payload) => {
+//   const { data } = await axiosClient.patch(`/issues/${id}/status`, payload);
+//   return data; // { success, data: issue }
+// };
+

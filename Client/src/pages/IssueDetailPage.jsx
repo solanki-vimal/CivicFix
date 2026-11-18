@@ -14,7 +14,7 @@ import './IssueDetailPage.css';
 
 export default function IssueDetailPage() {
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { joinIssueRoom, leaveIssueRoom, socket } = useSocket();
   const [issue, setIssue] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -86,7 +86,7 @@ export default function IssueDetailPage() {
         <Link to="/" className="detail-back">
           ← Back to feed
         </Link>
-
+        
         <div className="detail-top">
           <span className="detail-category" style={{ color: issue.category?.color }}>
             {issue.category?.name}
